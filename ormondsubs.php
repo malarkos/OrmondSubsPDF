@@ -2,7 +2,7 @@
 //============================================================+
 // File name   : ormondsubs.php
 // Begin       : 2019-11-19
-// Last Update : 2019-11-19
+// Last Update : 2019-12-08
 //
 // Description : Create PDF subs notice for Ormond Ski Club
 //               
@@ -27,8 +27,59 @@
 // Include the main TCPDF library (search for installation path).
 require_once('tcpdf_include.php');
 
+// extend TCPF with custom functions
+class MYPDF extends TCPDF {
+    // Colored table
+    public function ColoredTable($header,$data,$colcount) {
+        // Colors, line width and bold font
+        $this->SetFillColor(192);
+        $this->SetTextColor(0,0,0);
+        $this->SetDrawColor(0,0,0);
+        $this->SetLineWidth(0.3);
+        $this->SetFont('', 'B');
+        // Header
+        if ($colcount == 3)
+            $w = array(90, 45,45);
+        if ($colcount == 2)
+            $w = array(90,90);
+        $num_headers = count($header);
+        for($i = 0; $i < $num_headers; ++$i) {
+            $this->Cell($w[$i], 7, $header[$i], 1, 0, 'C', 1);
+        }
+        $this->Ln();
+        // Color and font restoration
+        $this->SetFillColor(224, 235, 255);
+        $this->SetTextColor(0);
+        $this->SetFont('');
+        // Data
+        $fill = 0;
+        foreach($data as $row) {
+            //echo $row[0];
+            $this->Cell($w[0], 6, $row[0], 'LR', 0, 'L', $fill);
+            //$this->Cell($w[1], 6, $row[1], 'LR', 0, 'L', $fill);
+            //$this->Cell($w[1], 6, number_format($row[1]), 'LR', 0, 'R', $fill);
+            if ($colcount == 3)
+            {
+                $this->Cell($w[1], 6, $row[1], 'LR', 0, 'R', $fill);
+                $this->Cell($w[2], 6, $row[2], 'LR', 0, 'R', $fill);
+            }
+            if ($colcount == 2)
+            {
+                $this->Cell($w[1], 6, $row[1], 'LR', 0, 'L', $fill);
+            }
+            
+            //$this->Cell($w[3], 6, number_format($row[3]), 'LR', 0, 'R', $fill);
+            $this->Ln();
+            $fill=!$fill;
+        }
+        $this->Cell(array_sum($w), 0, '', 'T');
+    }
+    
+}
+
 // create new PDF document
-$pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
+//$pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
+$pdf = new MYPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
 
 // set document information
 $pdf->SetCreator(PDF_CREATOR);
@@ -131,12 +182,63 @@ $html .= '<tr><td colspan="2">
 				to being able to book for the 2020 Ski season.  If you have any questions about your Subscription notice, please contact the Membership officer at general@ormondskiclub.com.au.
 		
 		</td></tr>';
-
 // close out master table
-$html .= '</table>';
+$html .= '</table><p>';
 
 // Print text using writeHTMLCell()
 $pdf->writeHTMLCell(0, 0, '', '', $html, 0, 1, 0, true, '', true);
+// column titles
+$header = array('Item', 'Amount','Total');
+$amountowning = 0.00;
+$table_values = array(
+    array('Balance as at 30 Nov 2019','$'.$amountowning,'$'.$amountowning)
+        //array('Total',250.00)
+        );
+$total_owing = $amountowning;
+$grad_sub = 300; $spouse_sub =150;$child_sub=110;$buddy_sub=150;$locker_sub=80;
+$total_owing += $grad_sub;
+array_push($table_values,array('Graduate Subs','$'.$grad_sub,'$'.$total_owing));
+$total_owing += $spouse_sub;
+array_push($table_values,array('Spouse Subs','$'.$spouse_sub,'$'.$total_owing));
+$total_owing += $child_sub;
+array_push($table_values,array('Child Subs','$'.$child_sub,'$'.$total_owing));
+$total_owing += $buddy_sub;
+array_push($table_values,array('Buddy Subs','$'.$buddy_sub,'$'.$total_owing));
+$total_owing += $locker_sub;
+array_push($table_values,array('Locker Subs','$'.$locker_sub,'$'.$total_owing));
+
+
+array_push($table_values,array('Total Owing','','$'.$total_owing));
+
+// print colored table
+//$html .= '<tr>';
+//$html .= 
+$pdf->ColoredTable($header, $table_values,3);
+$pdf->Ln();
+//$html .= '</tr>';
+// Add entries
+// Add balance carried forward
+// Add Graduate subs
+// Add family subs
+// Add buddy subs
+// Add Locker subs
+// show total
+
+// show work party days
+// Payment options
+$html1 = '<h3>Payment Options</h3>';
+$pdf->writeHTMLCell(0, 0, '', '', $html1, 0, 1, 0, true, '', true);
+
+$header1 = array('Internet Transfer','Pay by Cheque');
+
+$internet_transfer='ANZ Bank';
+$cheque_payment = 'Send cheque to:<p>Ormond Ski Club Treasurerfdsafdsafdfasdfdsafdsafsafsfdsfds';
+$sub_payment_options = array(array($internet_transfer,$cheque_payment));
+
+$pdf->ColoredTable($header1, $sub_payment_options,2);
+// Show contact details
+
+
 
 // ---------------------------------------------------------
 
